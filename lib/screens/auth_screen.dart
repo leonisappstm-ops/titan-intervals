@@ -451,113 +451,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> _showFacebookDialog() async {
-    final textController = TextEditingController();
 
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF161B26),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            FacebookIconWidget(size: 26),
-            SizedBox(width: 10),
-            Text(
-              'Sign In with Facebook',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Connect your Facebook account to save and sync your workout routines and gym history:',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: textController,
-              autofocus: true,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFF1F2637),
-                labelText: 'Facebook Profile Name or Email',
-                labelStyle: const TextStyle(color: Colors.white60),
-                hintText: 'e.g. Adrian Fitness',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF1877F2), size: 20),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(null),
-            child: const Text('CANCEL', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(textController.text.trim()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1877F2),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FacebookIconWidget(
-                  size: 18,
-                  backgroundColor: Colors.white,
-                  iconColor: Color(0xFF1877F2),
-                ),
-                SizedBox(width: 8),
-                Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.w900)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null) {
-      setState(() => _isLoading = true);
-      final profileName = result.isNotEmpty ? result : 'Facebook Athlete';
-      await _authService.signInWithFacebook(
-        name: profileName,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF1F2637),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            content: Row(
-              children: [
-                const Icon(Icons.facebook, color: Color(0xFF1877F2), size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Signed in with Facebook as $profileName',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      _navigateToHome();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -619,20 +513,6 @@ class _AuthScreenState extends State<AuthScreen> {
                     backgroundColor: const Color(0xFF1E2536),
                     textColor: Colors.white,
                     onPressed: _showGoogleDeviceAccountPicker,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Facebook Button
-                  _buildSocialButton(
-                    label: 'Continue with Facebook',
-                    customIcon: const FacebookIconWidget(
-                      size: 22,
-                      backgroundColor: Colors.white,
-                      iconColor: Color(0xFF1877F2),
-                    ),
-                    backgroundColor: const Color(0xFF1877F2),
-                    textColor: Colors.white,
-                    onPressed: _showFacebookDialog,
                   ),
                   const SizedBox(height: 24),
 
