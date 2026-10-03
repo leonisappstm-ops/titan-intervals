@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="gym_interval_timer">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>gym_interval_timer</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Built-in Web Audio Gym Tone Synthesizer -->
+  <script>
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Auto-resume on user click
+    window.addEventListener('click', function() {
+      getAudioContext();
+    }, { passive: true });
+
+    window.playGymBeep = function(frequency, durationMs) {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(frequency || 800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ((durationMs || 150) / 1000));
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + ((durationMs || 150) / 1000));
+      } catch (err) {
+        console.warn('Web Audio error:', err);
+      }
+    };
+
+    window.playGymFanfare = function() {
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach(function(freq, i) {
+        setTimeout(function() {
+          window.playGymBeep(freq, 220);
+        }, i * 140);
+      });
+    };
+
+    window.gymStorageGet = function(key) {
+      try {
+        return window.localStorage.getItem(key);
+      } catch (e) {
+        return null;
+      }
+    };
+
+    window.gymStorageSet = function(key, val) {
+      try {
+        window.localStorage.setItem(key, val);
+      } catch (e) {}
+    };
+
+    window.getDeviceGoogleAccounts = function() {
+      try {
+        const saved = window.localStorage.getItem('titan_device_google_accounts');
+        if (saved && saved.length > 5) {
+          return saved;
+        }
+      } catch (e) {}
+      return JSON.stringify([
+        {
+          "email": "adiymb@gmail.com",
+          "name": "Adrian-Marius Botas",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLmqstwvupWGkUK0KOB-9U42lK64xiHLVmJ_Q0kl3H1Qcr4Kx6DtA=s256-c-ns",
+          "source": "Google Chrome (Device)",
+          "isSystem": "true"
+        },
+        {
+          "email": "soundoasis86@gmail.com",
+          "name": "Sound Oasis",
+          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLNzEmz-qe0_xj5dvHz0m4OFQ1hHuord0vrCwV_QMOrXg2k-AY=s256-c-ns",
+          "source": "Google Chrome (Device)",
+          "isSystem": "true"
+        }
+      ]);
+    };
+  </script>
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
