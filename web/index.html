@@ -95,30 +95,7 @@
       } catch (e) {}
     };
 
-    window.getDeviceGoogleAccounts = function() {
-      try {
-        const saved = window.localStorage.getItem('titan_device_google_accounts');
-        if (saved && saved.length > 5) {
-          return saved;
-        }
-      } catch (e) {}
-      return JSON.stringify([
-        {
-          "email": "adiymb@gmail.com",
-          "name": "Adrian-Marius Botas",
-          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLmqstwvupWGkUK0KOB-9U42lK64xiHLVmJ_Q0kl3H1Qcr4Kx6DtA=s256-c-ns",
-          "source": "Google Chrome (Device)",
-          "isSystem": "true"
-        },
-        {
-          "email": "soundoasis86@gmail.com",
-          "name": "Sound Oasis",
-          "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocLNzEmz-qe0_xj5dvHz0m4OFQ1hHuord0vrCwV_QMOrXg2k-AY=s256-c-ns",
-          "source": "Google Chrome (Device)",
-          "isSystem": "true"
-        }
-      ]);
-    };
+
   </script>
 </head>
 <body>

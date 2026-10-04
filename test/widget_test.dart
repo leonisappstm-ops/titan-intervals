@@ -168,16 +168,6 @@ void main() {
       expect(auth.customRoutines.first.name, 'Sprint Test');
       expect(auth.workoutHistory.length, 1);
     });
-
-    test('Discovers device Google accounts accurately', () async {
-      final auth = AuthService();
-      final accounts = await auth.getDeviceGoogleAccounts();
-      expect(accounts, isNotEmpty);
-      // Verify device email is detected
-      final emails = accounts.map((a) => a['email']?.toLowerCase()).toList();
-      expect(emails.any((e) => e != null && e.contains('@')), isTrue);
-      expect(emails.contains('adiymb@gmail.com'), isTrue);
-    });
   });
 
   group('Widget Tests', () {

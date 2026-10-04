@@ -4,7 +4,5 @@ import 'storage_stub.dart'
 class StorageService {
   static Future<String?> getString(String key) => platformReadString(key);
   static Future<void> setString(String key, String value) => platformWriteString(key, value);
-  static String? getSystemUsername() => getPlatformSystemUsername();
-  static Future<List<Map<String, String>>> getDeviceGoogleAccounts() => platformGetDeviceGoogleAccounts();
 }
 

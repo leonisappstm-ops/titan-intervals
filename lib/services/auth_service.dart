@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_account.dart';
 import '../models/workout_routine.dart';
 import 'storage_service.dart';
@@ -49,19 +50,11 @@ class AuthService extends ChangeNotifier {
         _currentUser = _accounts[activeId];
       }
 
-      if (_currentUser == null) {
-        const defaultId = 'adrian_marius';
-        final defaultAccount = UserAccount(
-          id: defaultId,
-          email: 'adiymb@gmail.com',
-          displayName: 'Adrian-Marius',
-          photoUrl: 'https://lh3.googleusercontent.com/a/ACg8ocLmqstwvupWGkUK0KOB-9U42lK64xiHLVmJ_Q0kl3H1Qcr4Kx6DtA=s256-c-ns',
-          authProvider: 'google',
-          createdAt: DateTime.now(),
-        );
-        _accounts[defaultId] = defaultAccount;
-        _currentUser = defaultAccount;
-        await _persist();
+      // 4. Initialize Google Sign In
+      try {
+        await GoogleSignIn.instance.initialize();
+      } catch (e) {
+        debugPrint('GoogleSignIn initialize error: $e');
       }
     } catch (e) {
       debugPrint('Auth initialization error: $e');
@@ -130,81 +123,55 @@ class AuthService extends ChangeNotifier {
     return true;
   }
 
-  /// Retrieves detected Google accounts from this device
-  Future<List<Map<String, String>>> getDeviceGoogleAccounts() async {
-    try {
-      final accounts = await StorageService.getDeviceGoogleAccounts();
-      if (accounts.isNotEmpty) {
-        return accounts;
+  /// Sign In with Google via official GoogleSignIn SDK
+  Future<bool> signInWithGoogle({String? email, String? name, String? photoUrl}) async {
+    String cleanEmail;
+    String id;
+    String resolvedName;
+    String? resolvedPhoto;
+
+    if (email != null && email.trim().isNotEmpty) {
+      cleanEmail = email.trim().toLowerCase();
+      id = 'google_${cleanEmail.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
+      resolvedName = (name != null && name.trim().isNotEmpty) ? name.trim() : cleanEmail.split('@').first;
+      resolvedPhoto = photoUrl;
+    } else {
+      try {
+        final googleUser = await GoogleSignIn.instance.authenticate();
+
+        cleanEmail = googleUser.email.trim().toLowerCase();
+        id = 'google_${googleUser.id}';
+        resolvedName = (googleUser.displayName?.trim().isNotEmpty == true)
+            ? googleUser.displayName!.trim()
+            : cleanEmail.split('@').first;
+        resolvedPhoto = googleUser.photoUrl;
+      } catch (e) {
+        debugPrint('Google Sign-In error: $e');
+        rethrow;
       }
-    } catch (_) {}
+    }
 
-    return [
-      {
-        'email': 'adiymb@gmail.com',
-        'name': 'Adrian-Marius Botas',
-        'photoUrl': 'https://lh3.googleusercontent.com/a/ACg8ocLmqstwvupWGkUK0KOB-9U42lK64xiHLVmJ_Q0kl3H1Qcr4Kx6DtA=s256-c-ns',
-        'source': 'Google Chrome (Device)',
-        'isSystem': 'true',
-      },
-      {
-        'email': 'soundoasis86@gmail.com',
-        'name': 'Sound Oasis',
-        'photoUrl': 'https://lh3.googleusercontent.com/a/ACg8ocLNzEmz-qe0_xj5dvHz0m4OFQ1hHuord0vrCwV_QMOrXg2k-AY=s256-c-ns',
-        'source': 'Google Chrome (Device)',
-        'isSystem': 'true',
-      },
-    ];
-  }
-
-  /// Adds a Google account to this device's remembered list
-  Future<void> rememberDeviceGoogleAccount(String email, String name, [String? photoUrl]) async {
-    try {
-      final accounts = await getDeviceGoogleAccounts();
-      final exists = accounts.any((a) => a['email']?.toLowerCase() == email.trim().toLowerCase());
-      if (!exists) {
-        accounts.add({
-          'email': email.trim().toLowerCase(),
-          'name': name.trim(),
-          if (photoUrl != null && photoUrl.isNotEmpty) 'photoUrl': photoUrl.trim(),
-          'source': 'Saved Account',
-          'isSystem': 'true',
-        });
-        await StorageService.setString('titan_device_google_accounts', jsonEncode(accounts));
-      }
-    } catch (_) {}
-  }
-
-  /// Sign In with Google / Gmail
-  Future<void> signInWithGoogle({String? email, String? name, String? photoUrl}) async {
-    final resolvedEmail = (email?.trim().isNotEmpty == true) ? email!.trim().toLowerCase() : 'adiymb@gmail.com';
-    final resolvedName = (name?.trim().isNotEmpty == true) ? name!.trim() : 'Google Athlete';
-    final resolvedPhoto = (photoUrl?.trim().isNotEmpty == true)
-        ? photoUrl!.trim()
-        : 'https://lh3.googleusercontent.com/a/ACg8ocLmqstwvupWGkUK0KOB-9U42lK64xiHLVmJ_Q0kl3H1Qcr4Kx6DtA=s256-c-ns';
-
-    await rememberDeviceGoogleAccount(resolvedEmail, resolvedName, resolvedPhoto);
-
-    // Look for existing google account with this email
-    UserAccount? existing;
-    for (final acc in _accounts.values) {
-      if (acc.email.toLowerCase() == resolvedEmail && acc.authProvider == 'google') {
-        existing = acc;
-        break;
+    // Look for existing google account with this id or email
+    UserAccount? existing = _accounts[id];
+    if (existing == null) {
+      for (final acc in _accounts.values) {
+        if (acc.email.toLowerCase() == cleanEmail && acc.authProvider == 'google') {
+          existing = acc;
+          break;
+        }
       }
     }
 
     if (existing != null) {
       _currentUser = existing.copyWith(
         displayName: resolvedName,
-        photoUrl: resolvedPhoto,
+        photoUrl: resolvedPhoto ?? existing.photoUrl,
       );
       _accounts[existing.id] = _currentUser!;
     } else {
-      final id = 'google_${DateTime.now().millisecondsSinceEpoch}';
       final newAcc = UserAccount(
         id: id,
-        email: resolvedEmail,
+        email: cleanEmail,
         displayName: resolvedName,
         authProvider: 'google',
         photoUrl: resolvedPhoto,
@@ -216,6 +183,7 @@ class AuthService extends ChangeNotifier {
 
     await _persist();
     notifyListeners();
+    return true;
   }
 
   /// Sign In with Facebook
@@ -317,6 +285,11 @@ class AuthService extends ChangeNotifier {
 
   /// Sign Out
   Future<void> signOut() async {
+    try {
+      await GoogleSignIn.instance.signOut();
+    } catch (e) {
+      debugPrint('Google Sign-Out error: $e');
+    }
     _currentUser = null;
     await _persist();
     notifyListeners();
